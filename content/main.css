@@ -1,0 +1,92 @@
+a {
+    color: #ffffff;
+    font-weight: bolder;
+    font-style: italic;
+}
+
+body {
+    background:none !important;
+    margin:0px;
+    padding-bottom:10px;
+    font-size: 20px;
+    color:#FFFFFF;
+}
+
+blockquote{
+    border-left: 10px solid #000000;
+    border-right: 5px solid #d0d0d0;
+    font-size: 12px;
+    padding: 15px 10px 10px 10px;
+    display:block;
+    text-align: justify;
+    -moz-box-shadow: 2px 2px 15px #ccc;
+    -webkit-box-shadow: 2px 2px 15px #ccc;
+    box-shadow: 2px 2px 15px #ccc;
+}
+
+blockquote::before{
+  content: "\201C"; /*Unicode for Left Double Quote*/
+
+  /*Font*/
+  font-family: Georgia, serif;
+  font-size: 25px;
+  font-weight: bold;
+  color: #ffffff;
+
+  /*Positioning*/
+  left: 10px;
+  top:5px;
+}
+
+blockquote::after{
+    /*Reset to make sure*/
+    content: "";
+}
+
+.content{
+    margin-bottom: 20px;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 4px;
+    border-style: solid;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+.navbar-inverse {
+    background-color: rgba(34, 34, 34, 0.7) !important;
+}
+
+p{
+    text-align: justify;
+    text-indent: 50px;
+}
+img {
+    -webkit-animation: colorize 2s cubic-bezier(0, 0, .78, .36) 1;
+            animation: colorize 2s cubic-bezier(0, 0, .78, .36) 1;
+    background: transparent;
+    border-radius: 4px;
+    display:inline-block;
+    margin: 1.3em auto;
+    max-width: 95%;
+    align-self: center;
+
+}
+.modal-content{
+    background-color: rgba(128, 128, 128, 0.9);
+}
+
+.popover-title {
+    background-color: rgba(128, 128, 128, 0.9);
+}
+.popover-content {
+    background-color: rgba(128, 128, 128, 0.8);
+}
+.hidden {
+  display: none;
+}
+.validation{
+    color: red;
+}
