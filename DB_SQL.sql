@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     4/7/2017 11:24:16 AM                         */
+/* Created on:     4/7/2017 11:51:18 AM                         */
 /*==============================================================*/
 
 
@@ -45,7 +45,7 @@ create table FILE_HISTORY
    FILE_SEQ             int,
    ACTION               varchar(60),
    USER_SID             varchar(200),
-   ON                   datetime,
+   CREATED_ON           datetime,
    primary key (FILE_HISTORY_SEQ)
 );
 
