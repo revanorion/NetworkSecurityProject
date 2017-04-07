@@ -8,8 +8,6 @@ drop table if exists FILE;
 
 drop table if exists FILE_HISTORY;
 
-drop index INDEX_1 on USER;
-
 drop table if exists USER;
 
 drop table if exists USER_PERMISSIONS;
