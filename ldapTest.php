@@ -1,7 +1,35 @@
 <?php
-/**
- * Created by Joe of ExchangeCore.com
- */
+session_start();
+function decodeSID($value)
+{
+    # revision - 8bit unsigned int (C1)
+    # count - 8bit unsigned int (C1)
+    # 2 null bytes
+    # ID - 32bit unsigned long, big-endian order
+    $sid = @unpack('C1rev/C1count/x2/N1id', $value);
+    $subAuthorities = [];
+    if (!isset($sid['id']) || !isset($sid['rev'])) {
+        throw new \UnexpectedValueException(
+            'The revision level or identifier authority was not found when decoding the SID.'
+        );
+    }
+
+    $revisionLevel = $sid['rev'];
+    $identifierAuthority = $sid['id'];
+    $subs = isset($sid['count']) ? $sid['count'] : 0;
+
+    // The sub-authorities depend on the count, so only get as many as the count, regardless of data beyond it
+    for ($i = 0; $i < $subs; $i++) {
+        # Each sub-auth is a 32bit unsigned long, little-endian order
+        $subAuthorities[] = unpack('V1sub', hex2bin(substr(bin2hex($value), 16 + ($i * 8), 8)))['sub'];
+    }
+
+    # Tack on the 'S-' and glue it all together...
+    return 'S-'.$revisionLevel.'-'.$identifierAuthority.implode(
+        preg_filter('/^/', '-', $subAuthorities)
+    );
+}
+
 if(isset($_POST['username']) && isset($_POST['password'])){
 
     $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
@@ -16,19 +44,6 @@ if(isset($_POST['username']) && isset($_POST['password'])){
     ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
 
     $bind = @ldap_bind($ldap, $ldaprdn, $password);
-
-	
-	$infos["cn"] = "John Jones";
-    $infos["sn"] = "Jones";
-    $infos["objectclass"] = "person";
-	$r = ldap_bind($ldap, "cn=root, o=My Company, c=US", "secret");
-    // add data to directory
-    $r = ldap_add($ldap, "cn=John Jones, o=My Company, c=US", $infos);
-	
-	
-	
-	
-	
 	
     if ($bind) {
         $filter="(sAMAccountName=$username)";
@@ -38,9 +53,11 @@ if(isset($_POST['username']) && isset($_POST['password'])){
         for ($i=0; $i<$info["count"]; $i++)
         {
             if($info['count'] > 1)
-                break;
-			echo "<p>Member of ".$info[$i]["memberof"][0]."</p>";
-			
+                break;              
+            $_SESSION["USER_SID"]= decodeSID($info[$i]["objectsid"][0]);
+			echo "<p>Member of <pre>";
+			var_dump($info[$i]["memberof"]);
+            echo "</pre></p>";
             echo "<p>You are accessing <strong> ". $info[$i]["sn"][0] .", " . $info[$i]["givenname"][0] ."</strong><br /> (" . $info[$i]["samaccountname"][0] .")</p>\n";
             echo '<pre>';
             var_dump($info);

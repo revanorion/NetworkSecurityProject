@@ -1,5 +1,6 @@
 <?php
 include('session.php');
+echo $_SESSION["USER_SID"];
 ?>
     <!DOCTYPE html>
     <html lang="en">
