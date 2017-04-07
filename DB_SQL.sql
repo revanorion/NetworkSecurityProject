@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     4/7/2017 11:51:18 AM                         */
+/* Created on:     4/7/2017 11:54:17 AM                         */
 /*==============================================================*/
 
 
@@ -8,7 +8,9 @@ drop table if exists FILE;
 
 drop table if exists FILE_HISTORY;
 
-drop table if exists USER;
+drop index INDEX_1 on USERS;
+
+drop table if exists USERS;
 
 drop table if exists USER_PERMISSIONS;
 
@@ -48,9 +50,9 @@ create table FILE_HISTORY
 );
 
 /*==============================================================*/
-/* Table: USER                                                  */
+/* Table: USERS                                                 */
 /*==============================================================*/
-create table USER
+create table USERS
 (
    USER_SEQ             int not null auto_increment,
    USER_PERMISSIONS_SEQ int,
@@ -66,7 +68,7 @@ create table USER
 /*==============================================================*/
 /* Index: INDEX_1                                               */
 /*==============================================================*/
-create unique index INDEX_1 on USER
+create unique index INDEX_1 on USERS
 (
    USERNAME
 );
@@ -147,7 +149,7 @@ create table WALL_LIKE
    USER_SEQ             int
 );
 
-alter table USER add constraint FK_REFERENCE_8 foreign key (USER_PERMISSIONS_SEQ)
+alter table USERS add constraint FK_REFERENCE_8 foreign key (USER_PERMISSIONS_SEQ)
       references USER_PERMISSIONS (USER_PERMISSIONS_SEQ) on delete restrict on update restrict;
 
 alter table WALL_COMMENT add constraint FK_REFERENCE_6 foreign key (WALL_SEQ)
