@@ -53,7 +53,7 @@ function loadPost($wallSEQ){
     require './php/db_connect.php';
     $userSEQ = $_SESSION['login_user_id'];
     //this will get the wall post plus the user who posted it
-    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.TIME_STAMP, U.USERNAME FROM WALL W JOIN USER U ON W.USER_SEQ = U.USER_SEQ WHERE W.WALL_SEQ = ".$wallSEQ;
+    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.CREATED_ON, U.USERNAME FROM WALL W JOIN USERS U ON W.USER_SEQ = U.USER_SEQ WHERE W.WALL_SEQ = ".$wallSEQ;
     $result = $db->query($selectStmt);
     // output data of each row
     $getResults="";
@@ -64,13 +64,13 @@ function loadPost($wallSEQ){
             $likeCount ="0";
             $likeHTML="";
             //this will get all the images based on the wall post.
-            $selectImageStmt = "SELECT I.IMAGE_SEQ, I.IMAGE_NAME FROM WALL_IMAGE WI JOIN IMAGE I ON WI.IMAGE_SEQ = I.IMAGE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
+            $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
             $ImageResult = $db->query($selectImageStmt);
 
             if (mysqli_num_rows($ImageResult) > 0) {
                 while($rowImg = mysqli_fetch_assoc($ImageResult)) {
                     //this will add construct the html elements for each image
-                        $imageHTML.="<p><a class='fileThumb' href='".$rowImg["IMAGE_NAME"]."' target='_blank'><image class='image-post' src='".$rowImg["IMAGE_NAME"]."'></image></a></p>";
+                        $imageHTML.="<p><a class='fileThumb' href='".$rowImg["FILE_NAME"]."' target='_blank'><image class='image-post' src='".$rowImg["FILE_NAME"]."'></image></a></p>";
                 }
             }
             //this will select the likes of each wall post.
@@ -93,7 +93,7 @@ function loadPost($wallSEQ){
             //this builds the post
             $getResults.= "<div class='col-md-offset-3 col-md-3'>
                         <form class='well'>
-                            <p>".$row["USERNAME"]." ".$row["TIME_STAMP"]."</p>
+                            <p>".$row["USERNAME"]." ".$row["CREATED_ON"]."</p>
                             <p>".$row["STATUS_TEXT"]."</p>
                             ".$imageHTML."
                             <p>
@@ -121,7 +121,7 @@ function loadPost($wallSEQ){
 function loadPosts(){
     require_once './php/db_connect.php';
     //this grabs all posts for the when the page loadds
-    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.TIME_STAMP, U.USERNAME FROM WALL W JOIN USER U ON W.USER_SEQ = U.USER_SEQ ORDER BY TIME_STAMP DESC LIMIT 5 ";
+    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.CREATED_ON, U.USERNAME FROM WALL W JOIN USERS U ON W.USER_SEQ = U.USER_SEQ ORDER BY CREATED_ON DESC LIMIT 5 ";
     $result = $db->query($selectStmt);
     // output data of each row
     $getResults="";
@@ -134,15 +134,15 @@ function loadPosts(){
             $likeCount ="0";
             $likeHTMl="";
             //this selects all images for each wall post
-            $selectImageStmt = "SELECT I.IMAGE_SEQ, I.IMAGE_NAME FROM WALL_IMAGE WI JOIN IMAGE I ON WI.IMAGE_SEQ = I.IMAGE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
+            $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
             $ImageResult = $db->query($selectImageStmt);
 
             if (mysqli_num_rows($ImageResult) > 0) {
                 while($rowImg = mysqli_fetch_assoc($ImageResult)) {
                     //this will add construct the html elements for each image
-                        $imageHTML.="<p><a class='fileThumb' href='".$rowImg["IMAGE_NAME"]."' target='_blank'><image class='image-post' src='".$rowImg["IMAGE_NAME"]."'></image></a></p>";
+                        $imageHTML.="<p><a class='fileThumb' href='".$rowImg["FILE_NAME"]."' target='_blank'><image class='image-post' src='".$rowImg["FILE_NAME"]."'></image></a></p>";
                 }
-            }
+            }			
             //this will select the likes of each wall post.
             $selectCountLikes = "SELECT COUNT(WALL_SEQ) AS LIKES FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ;
             $resultCountLikes = $db->query($selectCountLikes);
@@ -167,7 +167,7 @@ function loadPosts(){
                 <div id='WALL-SEQ-".$row["WALL_SEQ"]."' class='row'>
                     <div class='col-md-offset-3 col-md-3'>
                         <form class='well'>
-                            <p>".$row["USERNAME"]." ".$row["TIME_STAMP"]."</p>
+                            <p>".$row["USERNAME"]." ".$row["CREATED_ON"]."</p>
                             <p>".$row["STATUS_TEXT"]."</p>
                             ".$imageHTML."
                             <p>
@@ -228,13 +228,13 @@ function postVoice($textValue, $pictureUrl){
                     }
                     else{
                         //file uploaded
-                        $insertImgStmt="INSERT INTO IMAGE (IMAGE_NAME) VALUES ('".$target_file."')";
+                        $insertImgStmt="INSERT INTO FILE (FILE_NAME) VALUES ('".$target_file."')";
                         $insertImgresult = $db->query($insertImgStmt);
                         if (mysqli_affected_rows($db) > -1) {
-                            $selectImgStmt = "SELECT MAX(IMAGE_SEQ) as IMAGE_SEQ FROM IMAGE";
+                            $selectImgStmt = "SELECT MAX(FILE_SEQ) as FILE_SEQ FROM FILE";
                             $selectImgresult = $db->query($selectImgStmt);
-                            $imgSeq=mysqli_fetch_assoc($selectImgresult)["IMAGE_SEQ"];
-                            $insertWallImageStmt = "INSERT INTO WALL_IMAGE (IMAGE_SEQ, WALL_SEQ) VALUES (".$imgSeq.", ".$wallSeq.")";
+                            $imgSeq=mysqli_fetch_assoc($selectImgresult)["FILE_SEQ"];
+                            $insertWallImageStmt = "INSERT INTO WALL_FILE (FILE_SEQ, WALL_SEQ) VALUES (".$imgSeq.", ".$wallSeq.")";
                             $db->query($insertWallImageStmt);
                             $imageHtml.="<p><a class='fileThumb' href='".$target_file."' target='_blank'><image class='image-post' src='".$target_file."'></image></a></p>";
                             unlink($file['target_file']);
@@ -274,14 +274,14 @@ function postVoice($textValue, $pictureUrl){
 
 function registerUser($username, $password){
     require_once './php/db_connect.php';
-    $selectStmt = "SELECT USER_SEQ FROM USER WHERE USERNAME ='".$username."'";
+    $selectStmt = "SELECT USER_SEQ FROM USERS WHERE USERNAME ='".$username."'";
     $result = $db->query($selectStmt);
     if (mysqli_num_rows($result) > 0) {
         return -1;
     }
     else
     {
-        $insertStmt= "INSERT INTO USER (USERNAME, PASSWORD) VALUES ('".$username."', '".password_hash($password, PASSWORD_DEFAULT)."')";
+        $insertStmt= "INSERT INTO USERS (USERNAME, PASSWORD) VALUES ('".$username."', '".password_hash($password, PASSWORD_DEFAULT)."')";
         $result = $db->query($insertStmt);
         if (mysqli_affected_rows($db) > -1) {
             return 1;
@@ -293,7 +293,7 @@ function registerUser($username, $password){
 
 function loginUser($username, $password){
     require_once './php/db_connect.php';
-    $selectStmt = "SELECT USER_SEQ, PASSWORD FROM USER WHERE USERNAME ='".$username."'";
+    $selectStmt = "SELECT USER_SEQ, PASSWORD FROM USERS WHERE USERNAME ='".$username."'";
     $result = $db->query($selectStmt);
     if (mysqli_num_rows($result) > 0) {
         $row = mysqli_fetch_assoc($result);

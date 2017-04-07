@@ -1,31 +1,52 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     11/20/2016 12:20:05 PM                       */
+/* Created on:     4/7/2017 11:24:16 AM                         */
 /*==============================================================*/
 
 
-drop table if exists IMAGE;
+drop table if exists FILE;
+
+drop table if exists FILE_HISTORY;
+
+drop index INDEX_1 on USER;
 
 drop table if exists USER;
+
+drop table if exists USER_PERMISSIONS;
 
 drop table if exists WALL;
 
 drop table if exists WALL_COMMENT;
 
-drop table if exists WALL_COMMENT_LIKE;
-
-drop table if exists WALL_IMAGE;
+drop table if exists WALL_FILE;
 
 drop table if exists WALL_LIKE;
 
 /*==============================================================*/
-/* Table: IMAGE                                                 */
+/* Table: FILE                                                  */
 /*==============================================================*/
-create table IMAGE
+create table FILE
 (
-   IMAGE_SEQ            int not null auto_increment,
-   IMAGE_NAME           varchar(255) not null,
-   primary key (IMAGE_SEQ)
+   FILE_SEQ             int not null auto_increment,
+   FILE_NAME            varchar(255) not null,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
+   primary key (FILE_SEQ)
+);
+
+/*==============================================================*/
+/* Table: FILE_HISTORY                                          */
+/*==============================================================*/
+create table FILE_HISTORY
+(
+   FILE_HISTORY_SEQ     int not null auto_increment,
+   FILE_SEQ             int,
+   ACTION               varchar(60),
+   USER_SID             varchar(200),
+   ON                   datetime,
+   primary key (FILE_HISTORY_SEQ)
 );
 
 /*==============================================================*/
@@ -34,8 +55,13 @@ create table IMAGE
 create table USER
 (
    USER_SEQ             int not null auto_increment,
+   USER_PERMISSIONS_SEQ int,
    USERNAME             varchar(255) not null,
    PASSWORD             varchar(255) not null,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
    primary key (USER_SEQ)
 );
 
@@ -48,15 +74,33 @@ create unique index INDEX_1 on USER
 );
 
 /*==============================================================*/
+/* Table: USER_PERMISSIONS                                      */
+/*==============================================================*/
+create table USER_PERMISSIONS
+(
+   USER_PERMISSIONS_SEQ int not null auto_increment,
+   PERMISSIONS_CODE     varchar(20) not null,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
+   primary key (USER_PERMISSIONS_SEQ)
+);
+
+/*==============================================================*/
 /* Table: WALL                                                  */
 /*==============================================================*/
 create table WALL
 (
    WALL_SEQ             int not null auto_increment,
-   USER_SEQ             int,
    STATUS_TEXT          longtext,
    STATUS_TITLE         varchar(255),
-   TIME_STAMP           timestamp,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
+   USER_SID             varchar(200),
+   USER_SEQ             int,
    primary key (WALL_SEQ)
 );
 
@@ -67,28 +111,28 @@ create table WALL_COMMENT
 (
    WALL_COMMENT_SEQ     int not null auto_increment,
    WALL_SEQ             int,
-   USER_SEQ             int,
    WALL_COMMENT_TEXT    longtext not null,
    DATE                 datetime not null,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
+   USER_SID             varchar(200),
+   USER_SEQ             int,
    primary key (WALL_COMMENT_SEQ)
 );
 
 /*==============================================================*/
-/* Table: WALL_COMMENT_LIKE                                     */
+/* Table: WALL_FILE                                             */
 /*==============================================================*/
-create table WALL_COMMENT_LIKE
+create table WALL_FILE
 (
-   USER_SEQ             int,
-   WALL_COMMENT_SEQ     int
-);
-
-/*==============================================================*/
-/* Table: WALL_IMAGE                                            */
-/*==============================================================*/
-create table WALL_IMAGE
-(
-   IMAGE_SEQ            int,
-   WALL_SEQ             int
+   FILE_SEQ             int,
+   WALL_SEQ             int,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200)
 );
 
 /*==============================================================*/
@@ -97,33 +141,26 @@ create table WALL_IMAGE
 create table WALL_LIKE
 (
    WALL_SEQ             int,
+   CREATED_ON           datetime,
+   CREATED_BY           varchar(200),
+   CHANGED_ON           datetime,
+   CHANGED_BY           varchar(200),
+   USER_SID             varchar(200),
    USER_SEQ             int
 );
 
-alter table WALL add constraint FK_REFERENCE_3 foreign key (USER_SEQ)
-      references USER (USER_SEQ) on delete restrict on update restrict;
+alter table USER add constraint FK_REFERENCE_8 foreign key (USER_PERMISSIONS_SEQ)
+      references USER_PERMISSIONS (USER_PERMISSIONS_SEQ) on delete restrict on update restrict;
 
 alter table WALL_COMMENT add constraint FK_REFERENCE_6 foreign key (WALL_SEQ)
       references WALL (WALL_SEQ) on delete restrict on update restrict;
 
-alter table WALL_COMMENT add constraint FK_REFERENCE_7 foreign key (USER_SEQ)
-      references USER (USER_SEQ) on delete restrict on update restrict;
+alter table WALL_FILE add constraint FK_REFERENCE_1 foreign key (FILE_SEQ)
+      references FILE (FILE_SEQ) on delete restrict on update restrict;
 
-alter table WALL_COMMENT_LIKE add constraint FK_REFERENCE_8 foreign key (USER_SEQ)
-      references USER (USER_SEQ) on delete restrict on update restrict;
-
-alter table WALL_COMMENT_LIKE add constraint FK_REFERENCE_9 foreign key (WALL_COMMENT_SEQ)
-      references WALL_COMMENT (WALL_COMMENT_SEQ) on delete restrict on update restrict;
-
-alter table WALL_IMAGE add constraint FK_REFERENCE_1 foreign key (IMAGE_SEQ)
-      references IMAGE (IMAGE_SEQ) on delete restrict on update restrict;
-
-alter table WALL_IMAGE add constraint FK_REFERENCE_2 foreign key (WALL_SEQ)
+alter table WALL_FILE add constraint FK_REFERENCE_2 foreign key (WALL_SEQ)
       references WALL (WALL_SEQ) on delete restrict on update restrict;
 
 alter table WALL_LIKE add constraint FK_REFERENCE_4 foreign key (WALL_SEQ)
       references WALL (WALL_SEQ) on delete restrict on update restrict;
-
-alter table WALL_LIKE add constraint FK_REFERENCE_5 foreign key (USER_SEQ)
-      references USER (USER_SEQ) on delete restrict on update restrict;
 
