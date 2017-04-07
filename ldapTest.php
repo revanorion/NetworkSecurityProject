@@ -1,4 +1,5 @@
 <?php
+session_start();
 function decodeSID($value)
 {
     # revision - 8bit unsigned int (C1)
@@ -53,7 +54,7 @@ if(isset($_POST['username']) && isset($_POST['password'])){
         {
             if($info['count'] > 1)
                 break;              
-            echo decodeSID($info[$i]["objectsid"][0]);
+            $_SESSION["USER_SID"]= decodeSID($info[$i]["objectsid"][0]);
 			echo "<p>Member of <pre>";
 			var_dump($info[$i]["memberof"]);
             echo "</pre></p>";
