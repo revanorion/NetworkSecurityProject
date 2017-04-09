@@ -194,9 +194,15 @@ function loadPosts(){
 
 
 function postVoice($textValue, $pictureUrl){
+    
     require_once './php/db_connect.php';
     $userid= $_SESSION['login_user_id'];
-    $insertStmt = "INSERT INTO WALL (USER_SEQ, STATUS_TEXT) VALUES(".$userid.", '".$textValue."')";
+    $sid="0";
+    if(isset($_SESSION['USER_SID']))
+    {
+        $sid = $_SESSION['USER_SID'];   
+    }
+    $insertStmt = "INSERT INTO WALL (USER_SEQ, STATUS_TEXT, USER_SID, CREATED_BY, CREATED_ON) VALUES(".$userid.", '".$textValue."', '".$sid."', '".$sid."', '".date("Y-m-d H:i:s")."')";
     $result = $db->query($insertStmt);
 
 
@@ -292,7 +298,7 @@ function registerUser($username, $password){
 
 
 function loginUser($username, $password){
-    require_once './php/db_connect.php';
+    /*require_once './php/db_connect.php';
     $selectStmt = "SELECT USER_SEQ, PASSWORD FROM USERS WHERE USERNAME ='".$username."'";
     $result = $db->query($selectStmt);
     if (mysqli_num_rows($result) > 0) {
@@ -311,6 +317,132 @@ function loginUser($username, $password){
     else
     {
         echo "User doesnt exist";
+    }*/
+    $ldap = connectLDAP($username, $password);
+
+    if ($ldap!=0){
+        //$sid = getAccountSID($ldap,$username);
+        
+        
+        $filter ="(sAMAccountName=".$username.")";
+        $result=ldap_search($ldap,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+        $entries = ldap_get_entries($ldap_con,$result);
+        $sid= decodeSID($entries[0]["objectsid"][0]);
+    
+        
+        
+        
+        
+        $_SESSION["USER_SID"]= $sid;
+        $_SESSION["login_user"] = getAccountName($ldap, $sid);
+        $_SESSION["login_user_id"] = 1;
+        $_SESSION["image_posts"] = null;        
+        //add user rights here        
+        @ldap_close($ldap);
+    }
+    else {
+        $msg = "Invalid email address / password";
+        echo $msg;
+    } 
+    
+    /*
+    $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";	
+    $ldap = ldap_connect($adServer);   
+    $ldaprdn = 'TylerMoak' . "\\" . $username;
+    ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+    ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+
+    $bind = @ldap_bind($ldap, $ldaprdn, $password);
+	
+    if ($bind) {
+        $filter="(sAMAccountName=$username)";
+        $result = ldap_search($ldap,"dc=TylerMoak,dc=COM",$filter);
+        ldap_sort($ldap,$result,"sn");
+        $info = ldap_get_entries($ldap, $result);
+        for ($i=0; $i<$info["count"]; $i++)
+        {
+            if($info['count'] > 1)
+                break;              
+            $_SESSION["USER_SID"]= decodeSID($info[$i]["objectsid"][0]);
+            $_SESSION["login_user"] = $info[$i]["samaccountname"][0];
+            $_SESSION["login_user_id"] = 1;
+            $_SESSION["image_posts"] = null;        
+            //add user rights here
+        }
+        @ldap_close($ldap);
+    } else {
+        $msg = "Invalid email address / password";
+        echo $msg;
+    }     
+    */
+}
+
+
+
+function decodeSID($value)
+{
+    # revision - 8bit unsigned int (C1)
+    # count - 8bit unsigned int (C1)
+    # 2 null bytes
+    # ID - 32bit unsigned long, big-endian order
+    $sid = @unpack('C1rev/C1count/x2/N1id', $value);
+    $subAuthorities = [];
+    if (!isset($sid['id']) || !isset($sid['rev'])) {
+        throw new \UnexpectedValueException(
+            'The revision level or identifier authority was not found when decoding the SID.'
+        );
+    }
+
+    $revisionLevel = $sid['rev'];
+    $identifierAuthority = $sid['id'];
+    $subs = isset($sid['count']) ? $sid['count'] : 0;
+
+    // The sub-authorities depend on the count, so only get as many as the count, regardless of data beyond it
+    for ($i = 0; $i < $subs; $i++) {
+        # Each sub-auth is a 32bit unsigned long, little-endian order
+        $subAuthorities[] = unpack('V1sub', hex2bin(substr(bin2hex($value), 16 + ($i * 8), 8)))['sub'];
+    }
+
+    # Tack on the 'S-' and glue it all together...
+    return 'S-'.$revisionLevel.'-'.$identifierAuthority.implode(
+        preg_filter('/^/', '-', $subAuthorities)
+    );
+}
+
+
+
+function connectLDAP($username, $password){
+    $ldap_dn="CN=".$username.",CN=Users,DC=TylerMoak,DC=com";
+    $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
+    $ldap_con = ldap_connect($adServer);
+    ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+    $bind = ldap_bind($ldap_con, $ldap_dn, $password);
+    if ($bind) {
+        return $ldap_con;
+    }
+    else 
+    {
+        return 0;
     }
 }
+
+function getAccountSID($ldap_con,$username)
+{
+    $filter ="(samaccountname=".$username.")";
+    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+    $entries = ldap_get_entries($ldap_con,$result);
+    return decodeSID($entries[0]["objectSID"][0]);
+}
+
+
+function getAccountName($ldap_con, $sid){
+    $filter ="(objectSID=".$sid.")";
+    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+    $entries = ldap_get_entries($ldap_con,$result);
+    return $entries[0]["samaccountname"][0];
+}
+
+
+
+
 ?>

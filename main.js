@@ -8,11 +8,11 @@ $(document).ready(function () {
         if (username != "" && password != "") {
             var url = $('#loginForm').attr('action');
             var data = {
-                'signup': true
-                , 'username': username
-                , 'password': password
-            }
-            //This will post to the signup method in php server
+                    'signup': true,
+                    'username': username,
+                    'password': password
+                }
+                //This will post to the signup method in php server
             $.post(url, data, function (response) {
                 if (response == -1) {
                     Command: toastr["error"]("Username already taken!", "Failed")
@@ -33,8 +33,7 @@ $(document).ready(function () {
                         "showMethod": "fadeIn",
                         "hideMethod": "fadeOut"
                     }
-                }
-                else if (response == 0) {
+                } else if (response == 0) {
                     Command: toastr["error"]("Error creating user!", "Failed")
                     toastr.options = {
                         "closeButton": true,
@@ -53,8 +52,7 @@ $(document).ready(function () {
                         "showMethod": "fadeIn",
                         "hideMethod": "fadeOut"
                     }
-                }
-                else {
+                } else {
                     Command: toastr["success"]("Successfully created account!", "Success")
                     toastr.options = {
                         "closeButton": true,
@@ -90,29 +88,31 @@ $(document).ready(function () {
                 'password': password
             };
             //This will post to the login method in php server
-            $.post(url, data, function (response) {
-                window.location.replace("./wall.php");
-            }).fail(function (e) {
-                alert("error" + e);
+            $.post(url, data).then(function (data) {
+                //window.location.replace("./wall.php");
+                alert(data);
+
+            }, function (e, f) {
+                alert("error " + f);
             });
         }
     });
 
-    $('#postButton').on('click', function(e){
+    $('#postButton').on('click', function (e) {
         e.preventDefault();
         var url = $('#voiceForm').attr('action');
         var data = {
-            'voicePost':true,
-            'textValue':$('#voiceInput').val(),
+            'voicePost': true,
+            'textValue': $('#voiceInput').val(),
             'picValue': "test"
         };
         //This will post  to the voice method in php server
         $.post(url, data, function (response) {
             $('#voiceInput').val("")
-            var wallData= response + $('#wall-posts').html();
+            var wallData = response + $('#wall-posts').html();
             $('#wall-posts').html(wallData);
-        }).fail(function( jqXHR, textStatus ) {
-            alert( "Request failed: " + textStatus );
+        }).fail(function (jqXHR, textStatus) {
+            alert("Request failed: " + textStatus);
         });
     });
 

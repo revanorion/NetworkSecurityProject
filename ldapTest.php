@@ -73,7 +73,45 @@ if(isset($_POST['username']) && isset($_POST['password'])){
 }else{
 ?>
     <form action="#" method="POST">
-        <label for="username">Username: </label><input id="username" type="text" name="username" /> 
-        <label for="password">Password: </label><input id="password" type="password" name="password" />        <input type="submit" name="submit" value="Submit" />
+        <label for="username">Username: </label>
+        <input id="username" type="text" name="username" />
+        <label for="password">Password: </label>
+        <input id="password" type="password" name="password" />
+        <input type="submit" name="submit" value="Submit" />
     </form>
-<?php } ?> 
+    <?php } 
+
+$sidOrig= "S-1-5-21-555290445-4143228776-974942040-1000";
+
+$ldap_dn="CN=Administrator,CN=Users,DC=TylerMoak,DC=com";
+$ldap_password = "51bd-baf";
+$adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
+$ldap_con = ldap_connect($adServer);
+ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+
+
+$bind = ldap_bind($ldap_con, $ldap_dn, $ldap_password);
+if ($bind) {
+    $filter ="(objectSID=".$sidOrig.")";
+    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+    $entries = ldap_get_entries($ldap_con,$result);
+    echo ($entries[0]["samaccountname"][0]);
+    
+    
+    $filter ="(sAMAccountName=Revan Orion)";
+    echo $filter;
+    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+    $entries = ldap_get_entries($ldap_con,$result);
+    echo "<pre>";
+    //print_r ($entries);
+    echo "</pre>";
+    echo decodeSID($entries[0]["objectsid"][0]);
+    
+    
+}
+else{
+    echo "Nope ";
+}
+
+
+?>
