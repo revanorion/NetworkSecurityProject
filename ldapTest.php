@@ -91,19 +91,16 @@ ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
 
 
 $bind = ldap_bind($ldap_con, $ldap_dn, $ldap_password);
-if ($bind) {
-    $filter ="(objectSID=".$sidOrig.")";
-    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
-    $entries = ldap_get_entries($ldap_con,$result);
-    echo ($entries[0]["samaccountname"][0]);
-    
-    
+if ($bind) {        
     $filter ="(sAMAccountName=Revan Orion)";
-    echo $filter;
     $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
-    $entries = ldap_get_entries($ldap_con,$result);
+    $entries = ldap_get_entries($ldap_con,$result);   
+    
+    $count = countValues($entries[0]["memberof"], "Users");
+    echo $count;
+    
     echo "<pre>";
-    //print_r ($entries);
+    print_r ($entries[0]["memberof"]);
     echo "</pre>";
     echo decodeSID($entries[0]["objectsid"][0]);
     
@@ -113,5 +110,13 @@ else{
     echo "Nope ";
 }
 
+function countValues($arr, $search)
+{
+    foreach ($arr as &$value) {
+        if (substr_count($value, $search)>=1)
+            return 1;
+    }    
+    return 0;
+}
 
 ?>

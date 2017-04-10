@@ -1,6 +1,17 @@
 <?php
 session_start();
 
+//Higher values have previous rights aswell except 0.
+abstract class UserRights
+{
+    const None = 0;
+    const Download = 1;
+    const Upload = 2;
+    const Delete = 3;
+}
+
+
+
 function is_ajax() {
   return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 }
@@ -304,27 +315,7 @@ function registerUser($username, $password){
 }
 
 
-function loginUser($username, $password){
-    /*require_once './php/db_connect.php';
-    $selectStmt = "SELECT USER_SEQ, PASSWORD FROM USERS WHERE USERNAME ='".$username."'";
-    $result = $db->query($selectStmt);
-    if (mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        if(password_verify($password, $row["PASSWORD"])){
-            //this will store the session vars
-            $_SESSION["login_user"] = $username;
-            $_SESSION["login_user_id"] = $row["USER_SEQ"];
-            $_SESSION["image_posts"] = null;
-            echo "your in".$_SESSION["login_user"];
-        }
-        else{
-            echo "try again";
-        }
-    }
-    else
-    {
-        echo "User doesnt exist";
-    }*/
+function loginUser($username, $password){   
     try{
         $ldap_con = connectLDAP();
         if ($ldap_con!=0){      
@@ -334,12 +325,19 @@ function loginUser($username, $password){
                 $msg = "Invalid email address / password";
                 return $msg;
             }            
-            
+            $memberof = getMemberOf($ldap_con, $sid);
             $_SESSION["login_user"] = getAccountName($ldap_con, $sid);
             $_SESSION["login_user_id"] = $sid;
             $_SESSION["image_posts"] = null;    
             
-        //add user rights here        
+            if(doesExist($memberof, "Delete"))
+                $_SESSION["login_user_rights"]=UserRights::Delete;
+            else if(doesExist($memberof, "Upload"))
+                $_SESSION["login_user_rights"]=UserRights::Upload;
+            else if(doesExist($memberof, "Download"))
+                $_SESSION["login_user_rights"]=UserRights::Download;
+            else
+                $_SESSION["login_user_rights"]=UserRights::None;       
             @ldap_close($ldap_con);
         }
         
@@ -347,36 +345,7 @@ function loginUser($username, $password){
         return "Caught exception: ". $e->getMessage()."\n";
     }
     
-    /*
-    $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";	
-    $ldap = ldap_connect($adServer);   
-    $ldaprdn = 'TylerMoak' . "\\" . $username;
-    ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
-    ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
-
-    $bind = @ldap_bind($ldap, $ldaprdn, $password);
-	
-    if ($bind) {
-        $filter="(sAMAccountName=$username)";
-        $result = ldap_search($ldap,"dc=TylerMoak,dc=COM",$filter);
-        ldap_sort($ldap,$result,"sn");
-        $info = ldap_get_entries($ldap, $result);
-        for ($i=0; $i<$info["count"]; $i++)
-        {
-            if($info['count'] > 1)
-                break;              
-            $_SESSION["USER_SID"]= decodeSID($info[$i]["objectsid"][0]);
-            $_SESSION["login_user"] = $info[$i]["samaccountname"][0];
-            $_SESSION["login_user_id"] = 1;
-            $_SESSION["image_posts"] = null;        
-            //add user rights here
-        }
-        @ldap_close($ldap);
-    } else {
-        $msg = "Invalid email address / password";
-        echo $msg;
-    }     
-    */
+   
 }
 
 
@@ -446,6 +415,21 @@ function getAccountName($ldap_con, $sid){
     return $entries[0]["samaccountname"][0];
 }
 
+function getMemberOf($ldap_con, $sid){
+    $filter ="(objectSID=".$sid.")";
+    $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
+    $entries = ldap_get_entries($ldap_con,$result);
+    return $entries[0]["memberof"];
+}
+
+function doesExist($arr, $search)
+{
+    foreach ($arr as &$value) {
+        if (substr_count($value, $search)>=1)
+            return 1;
+    }    
+    return 0;
+}
 
 
 
