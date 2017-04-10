@@ -89,9 +89,10 @@ $(document).ready(function () {
             };
             //This will post to the login method in php server
             $.post(url, data).then(function (data) {
-                //window.location.replace("./wall.php");
-                alert(data);
-
+                if (data != "")
+                    alert(data);
+                else
+                    window.location.replace("./wall.php");
             }, function (e, f) {
                 alert("error " + f);
             });

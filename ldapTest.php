@@ -87,7 +87,7 @@ $ldap_dn="CN=Administrator,CN=Users,DC=TylerMoak,DC=com";
 $ldap_password = "51bd-baf";
 $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
 $ldap_con = ldap_connect($adServer);
-ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
 
 
 $bind = ldap_bind($ldap_con, $ldap_dn, $ldap_password);

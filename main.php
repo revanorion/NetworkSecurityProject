@@ -33,10 +33,10 @@ function likePost($wallSEQ){
     $checkWallExists = "SELECT W.WALL_SEQ FROM WALL W WHERE W.WALL_SEQ = ".$wallSEQ;
     $checkResult = $db->query($checkWallExists);
     if (mysqli_num_rows($checkResult) > 0) {
-        $checkLikeWallNotExists = "SELECT W.WALL_SEQ FROM WALL_LIKE W WHERE W.WALL_SEQ = ".$wallSEQ." AND W.USER_SEQ = ".$userSEQ;
+        $checkLikeWallNotExists = "SELECT W.WALL_SEQ FROM WALL_LIKE W WHERE W.WALL_SEQ = ".$wallSEQ." AND W.USER_SID = '".$userSEQ."'";
         $checkLikeResult = $db->query($checkLikeWallNotExists);
         if (mysqli_num_rows($checkLikeResult) == 0) {
-            $insertWallLikeStmt = "INSERT INTO WALL_LIKE (WALL_SEQ, USER_SEQ) VALUES (".$wallSEQ.", ".$userSEQ.")";
+            $insertWallLikeStmt = "INSERT INTO WALL_LIKE (WALL_SEQ, USER_SID) VALUES (".$wallSEQ.", '".$userSEQ."')";
             $insertResult = $db->query($insertWallLikeStmt);
             if (mysqli_affected_rows($db) > -1) {
                 return loadPost($wallSEQ);
@@ -53,7 +53,7 @@ function loadPost($wallSEQ){
     require './php/db_connect.php';
     $userSEQ = $_SESSION['login_user_id'];
     //this will get the wall post plus the user who posted it
-    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.CREATED_ON, U.USERNAME FROM WALL W JOIN USERS U ON W.USER_SEQ = U.USER_SEQ WHERE W.WALL_SEQ = ".$wallSEQ;
+    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SID, W.STATUS_TEXT, W.CREATED_ON, U.USERNAME FROM WALL W WHERE W.WALL_SEQ = ".$wallSEQ;
     $result = $db->query($selectStmt);
     // output data of each row
     $getResults="";
@@ -63,6 +63,14 @@ function loadPost($wallSEQ){
             $imageHTML="";
             $likeCount ="0";
             $likeHTML="";
+            $username="";
+            $ldap_con = connectLDAP();
+            if ($ldap_con!=0){
+                $sid = $row["USER_SID"];
+                $username = getAccountName($ldap_con, $sid);
+                @ldap_close(ldap_con);
+            }            
+            
             //this will get all the images based on the wall post.
             $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
             $ImageResult = $db->query($selectImageStmt);
@@ -77,7 +85,7 @@ function loadPost($wallSEQ){
             $selectCountLikes = "SELECT COUNT(WALL_SEQ) AS LIKES FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ;
             $resultCountLikes = $db->query($selectCountLikes);
             //this will check to see if the current user has liked the post. this will determine the checked status of the like button
-            $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SEQ = ".$userSEQ;
+            $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SID = '".$userSEQ."'";
             $resultLike = $db->query($selectLike);
             if (mysqli_num_rows($resultLike) > 0) {
                 $likeHTML = "<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' checked=true />";
@@ -93,7 +101,7 @@ function loadPost($wallSEQ){
             //this builds the post
             $getResults.= "<div class='col-md-offset-3 col-md-3'>
                         <form class='well'>
-                            <p>".$row["USERNAME"]." ".$row["CREATED_ON"]."</p>
+                            <p>".$username." ".$row["CREATED_ON"]."</p>
                             <p>".$row["STATUS_TEXT"]."</p>
                             ".$imageHTML."
                             <p>
@@ -108,7 +116,7 @@ function loadPost($wallSEQ){
                     <div class='col-md-2'>
                         <form class='well'>
                             <p> this is a reply</p>
-                            <button class='btn btn-default'><span class='glyphicon glyphicon-thumbs-up'></span> <span class='badge'>4</span></button>
+                            <button class='btn btn-default'><span class='glyphicon glyphicon-thumbs-up'></span> <span class='badge'>0</span></button>
                         </form>
                     </div>";
         }
@@ -121,7 +129,7 @@ function loadPost($wallSEQ){
 function loadPosts(){
     require_once './php/db_connect.php';
     //this grabs all posts for the when the page loadds
-    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SEQ, W.STATUS_TEXT, W.CREATED_ON, U.USERNAME FROM WALL W JOIN USERS U ON W.USER_SEQ = U.USER_SEQ ORDER BY CREATED_ON DESC LIMIT 5 ";
+    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SID, W.STATUS_TEXT, W.CREATED_ON FROM WALL W ORDER BY W.CREATED_ON DESC LIMIT 5 ";
     $result = $db->query($selectStmt);
     // output data of each row
     $getResults="";
@@ -133,6 +141,13 @@ function loadPosts(){
             $wallSEQ=$row["WALL_SEQ"];
             $likeCount ="0";
             $likeHTMl="";
+            $username="";
+            $ldap_con = connectLDAP();
+            if ($ldap_con!=0){
+                $sid = $row["USER_SID"];
+                $username = getAccountName($ldap_con, $sid);
+                @ldap_close(ldap_con);
+            }
             //this selects all images for each wall post
             $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
             $ImageResult = $db->query($selectImageStmt);
@@ -147,7 +162,7 @@ function loadPosts(){
             $selectCountLikes = "SELECT COUNT(WALL_SEQ) AS LIKES FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ;
             $resultCountLikes = $db->query($selectCountLikes);
             //this will check to see if the current user has liked the post. this will determine the checked status of the like button
-            $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SEQ = ".$userSEQ;
+            $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SID = '".$userSEQ."'";
             $resultLike = $db->query($selectLike);
             if (mysqli_num_rows($resultLike) > 0) {
                 $likeHTML = "<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' checked=true />";
@@ -167,7 +182,7 @@ function loadPosts(){
                 <div id='WALL-SEQ-".$row["WALL_SEQ"]."' class='row'>
                     <div class='col-md-offset-3 col-md-3'>
                         <form class='well'>
-                            <p>".$row["USERNAME"]." ".$row["CREATED_ON"]."</p>
+                            <p>".$username." ".$row["CREATED_ON"]."</p>
                             <p>".$row["STATUS_TEXT"]."</p>
                             ".$imageHTML."
                             <p>
@@ -197,15 +212,8 @@ function postVoice($textValue, $pictureUrl){
     
     require_once './php/db_connect.php';
     $userid= $_SESSION['login_user_id'];
-    $sid="0";
-    if(isset($_SESSION['USER_SID']))
-    {
-        $sid = $_SESSION['USER_SID'];   
-    }
-    $insertStmt = "INSERT INTO WALL (USER_SEQ, STATUS_TEXT, USER_SID, CREATED_BY, CREATED_ON) VALUES(".$userid.", '".$textValue."', '".$sid."', '".$sid."', '".date("Y-m-d H:i:s")."')";
+    $insertStmt = "INSERT INTO WALL (STATUS_TEXT, USER_SID, CREATED_BY, CREATED_ON) VALUES('".$textValue."', '".$userid."', '".$userid."', '".date("Y-m-d H:i:s")."')";
     $result = $db->query($insertStmt);
-
-
 
     if (mysqli_affected_rows($db) > -1) {
         $selectWallStmt = "SELECT MAX(WALL_SEQ) as WALL_SEQ FROM WALL";
@@ -277,7 +285,6 @@ function postVoice($textValue, $pictureUrl){
 }
 
 
-
 function registerUser($username, $password){
     require_once './php/db_connect.php';
     $selectStmt = "SELECT USER_SEQ FROM USERS WHERE USERNAME ='".$username."'";
@@ -318,32 +325,27 @@ function loginUser($username, $password){
     {
         echo "User doesnt exist";
     }*/
-    $ldap = connectLDAP($username, $password);
-
-    if ($ldap!=0){
-        //$sid = getAccountSID($ldap,$username);
-        
-        
-        $filter ="(sAMAccountName=".$username.")";
-        $result=ldap_search($ldap,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
-        $entries = ldap_get_entries($ldap_con,$result);
-        $sid= decodeSID($entries[0]["objectsid"][0]);
-    
-        
-        
-        
-        
-        $_SESSION["USER_SID"]= $sid;
-        $_SESSION["login_user"] = getAccountName($ldap, $sid);
-        $_SESSION["login_user_id"] = 1;
-        $_SESSION["image_posts"] = null;        
+    try{
+        $ldap_con = connectLDAP();
+        if ($ldap_con!=0){      
+            $sid = getAccountSID($ldap_con,$username);   
+            if(!isset($sid))
+            {          
+                $msg = "Invalid email address / password";
+                return $msg;
+            }            
+            
+            $_SESSION["login_user"] = getAccountName($ldap_con, $sid);
+            $_SESSION["login_user_id"] = $sid;
+            $_SESSION["image_posts"] = null;    
+            
         //add user rights here        
-        @ldap_close($ldap);
+            @ldap_close($ldap_con);
+        }
+        
+    } catch (Exception $e) {
+        return "Caught exception: ". $e->getMessage()."\n";
     }
-    else {
-        $msg = "Invalid email address / password";
-        echo $msg;
-    } 
     
     /*
     $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";	
@@ -411,11 +413,12 @@ function decodeSID($value)
 
 
 
-function connectLDAP($username, $password){
-    $ldap_dn="CN=".$username.",CN=Users,DC=TylerMoak,DC=com";
+function connectLDAP(){
+    $ldap_dn="CN=Administrator,CN=Users,DC=TylerMoak,DC=com";
+    $password="51bd-baf";
     $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
     $ldap_con = ldap_connect($adServer);
-    ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+    ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
     $bind = ldap_bind($ldap_con, $ldap_dn, $password);
     if ($bind) {
         return $ldap_con;
@@ -431,9 +434,10 @@ function getAccountSID($ldap_con,$username)
     $filter ="(samaccountname=".$username.")";
     $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
     $entries = ldap_get_entries($ldap_con,$result);
-    return decodeSID($entries[0]["objectSID"][0]);
+    if (count($entries)==1)
+        return null;
+    return decodeSID($entries[0]["objectsid"][0]);
 }
-
 
 function getAccountName($ldap_con, $sid){
     $filter ="(objectSID=".$sid.")";
