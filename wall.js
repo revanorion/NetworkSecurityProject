@@ -3,14 +3,14 @@
 $(document).ready(function () {
     'use strict';
     //this loads all the wall posts on the page
-    var url = $('#voiceForm').attr('action');
-    var data={
-        'getPosts':true
+    var url = 'main.php';
+    var data = {
+        'getPosts': true
     };
     $.post(url, data, function (response) {
         $('#wall-posts').html(response);
-    }).fail(function( jqXHR, textStatus ) {
-        alert( "Request failed: " + textStatus );
+    }).fail(function (jqXHR, textStatus) {
+        alert("Request failed: " + textStatus);
     });
 
     //this sets up the file input thingy along with the post action
@@ -21,23 +21,25 @@ $(document).ready(function () {
     });
 
     //this handles the mouse moving over the image to give a preview
-    $(document).on('mousemove','.fileThumb',function(e){
+    $(document).on('mousemove', '.fileThumb', function (e) {
         var offset = $(this).offset();
         var x = e.pageX - $(this).offset().left;
         var y = e.pageY - $(this).offset().top;
 
         if ($("#ihover").length) {
-            $("#ihover").css({'top': y+200, 'left': x+900});
-        }
-        else{
+            $("#ihover").css({
+                'top': y + 200,
+                'left': x + 900
+            });
+        } else {
             var imgLoc = $(this).children('img').prop('src');
-            var myImg = "<image id='ihover' src='"+imgLoc+"' style='top: "+y+ "; left: "+x+";'>";
+            var myImg = "<image id='ihover' src='" + imgLoc + "' style='top: " + y + "; left: " + x + ";'>";
             $(document.body).append(myImg);
         }
     });
 
     //this removes the image hover thingy
-    $(document).on('mouseleave', '.fileThumb', function(){
+    $(document).on('mouseleave', '.fileThumb', function () {
         if ($("#ihover").length) {
             $("#ihover").remove();
         }
@@ -45,72 +47,71 @@ $(document).ready(function () {
 
 
     //this handles when the user posts a new wall post
-    $('#postButton').on('click', function(e){
+    $('#postButton').on('click', function (e) {
         e.preventDefault();
         var data = {
-            'voicePost':true,
-            'textValue':$('#voiceInput').val(),
+            'voicePost': true,
+            'textValue': $('#voiceInput').val(),
             'picValue': "test"
         };
         $.post(url, data, function (response) {
             $('#voiceInput').val("")
-            var wallData= response + $('#wall-posts').html();
+            var wallData = response + $('#wall-posts').html();
             $('#wall-posts').html(wallData);
-        }).fail(function( jqXHR, textStatus ) {
-            alert( "Request failed: " + textStatus );
+        }).fail(function (jqXHR, textStatus) {
+            alert("Request failed: " + textStatus);
         });
     });
 
     //this deals with the upload button to show the actual field.
     $('#uploadArea').slideToggle(500);
-    $('#uploadPictureButton').on('click', function(e){
+    $('#uploadPictureButton').on('click', function (e) {
         e.preventDefault();
-       $('#uploadArea').slideToggle(500);
+        $('#uploadArea').slideToggle(500);
     });
     //this handles the removing of files. this must be done cause session vars have data that must be cleaned
-    $('.fileinput-remove-button').on('click',function(){
+    $('.fileinput-remove-button').on('click', function () {
         var data = {
-            'clearUploads':true
+            'clearUploads': true
         };
         $.post(url, data, function (response) {
             alert("cleared session var");
-        }).fail(function( jqXHR, textStatus ) {
-            alert( "Request failed: " + textStatus );
+        }).fail(function (jqXHR, textStatus) {
+            alert("Request failed: " + textStatus);
         });
     });
     //this is the tiny trashcan for each image
-    $(document).on('click','.kv-file-remove',function(){
+    $(document).on('click', '.kv-file-remove', function () {
         alert("clicked file remove. never got around to implementing this. easy tho");
     });
 
     //this handles the clicking of the like button
-    $(document).on('click','.like',function(){
+    $(document).on('click', '.like', function () {
         var dataId = $(this).data('id');
-        if($(this).prop('checked'))
-        {
+        if ($(this).prop('checked')) {
             //like func
             var data = {
-                'likePost':true,
+                'likePost': true,
                 'wallSEQ': dataId
             };
             $.post(url, data, function (response) {
-                var wallPost= '#WALL-SEQ-'+ dataId;
+                var wallPost = '#WALL-SEQ-' + dataId;
                 $(wallPost).html(response);
-            }).fail(function( jqXHR, textStatus ) {
-                alert( "Request failed: " + textStatus );
+            }).fail(function (jqXHR, textStatus) {
+                alert("Request failed: " + textStatus);
             });
-        } else{
+        } else {
             //unlike func.
             alert("didnt implment this yet lol");
             var data = {
-                'unlikePost':true,
-                'wallSEQ':dataId
+                'unlikePost': true,
+                'wallSEQ': dataId
             };
             $.post(url, data, function (response) {
-                var wallPost= '#WALL-SEQ-'+dataId;
+                var wallPost = '#WALL-SEQ-' + dataId;
                 $(wallPost).html(response);
-            }).fail(function( jqXHR, textStatus ) {
-                alert( "Request failed: " + textStatus );
+            }).fail(function (jqXHR, textStatus) {
+                alert("Request failed: " + textStatus);
             });
         }
     });

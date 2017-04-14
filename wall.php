@@ -2,6 +2,8 @@
 include('session.php');
 if(!isset($_SESSION["login_user"]))
     header("location: index.php");
+if(isset($_SESSION["login_user_rights"]) && $_SESSION["login_user_rights"] == 0)
+    echo "OUT";
 ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -58,24 +60,32 @@ if(!isset($_SESSION["login_user"]))
             </div>
         </nav>
         <div id="wall" class="container-fluid">
-            <div class="row">
-                <div class="col-md-offset-3 col-md-5">
-                    <form id="voiceForm" class="well" action="main.php">
-                        <div class="input-group input-group-lg">
-                            <input id="voiceInput" type="text" class="form-control" placeholder="This is your voice!" />
-                            <div class="input-group-btn">
-                                <button id="uploadPictureButton" class="btn btn-info">Upload Picture</button>
-                                <button id="postButton" class="btn btn-success">Post</button>
-                            </div>
-                        </div>
-                        <div id="uploadArea">
-                            <label class="control-label">Select File</label>
-                            <input id="input-fa" name="inputfa[]" type="file" multiple class="file-loading">
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div id="wall-posts"> </div>
+
+            <?php
+            if ($_SESSION["login_user_rights"]>1)
+            {
+            echo '<div class="row">';
+            echo '    <div class="col-md-offset-3 col-md-5">';
+            echo '        <form id="voiceForm" class="well" action="main.php">';
+            echo '            <div class="input-group input-group-lg">';
+            echo '                <input id="voiceInput" type="text" class="form-control" placeholder="This is your voice!" />';
+            echo '                <div class="input-group-btn">';
+            echo '                    <button id="uploadPictureButton" class="btn btn-info">Upload Picture</button>';
+            echo '                    <button id="postButton" class="btn btn-success">Post</button>';
+            echo '                </div>';
+            echo '            </div>';
+            echo '            <div id="uploadArea">';
+            echo '                <label class="control-label">Select File</label>';
+            echo '                <input id="input-fa" name="inputfa[]" type="file" multiple class="file-loading">';
+            echo '            </div>';
+            echo '        </form>';
+            echo '    </div>';
+            echo '</div>';
+            }
+            ?>
+
+
+                <div id="wall-posts"> </div>
         </div>
         <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
         <script src="wall.js" type="text/javascript"></script>
