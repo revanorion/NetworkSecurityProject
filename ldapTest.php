@@ -88,21 +88,24 @@ $ldap_password = "51bd-baf";
 $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
 $ldap_con = ldap_connect($adServer);
 ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
+ldap_set_option($ldap_con, LDAP_OPT_REFERRALS, 0);
 
 
 $bind = ldap_bind($ldap_con, $ldap_dn, $ldap_password);
 if ($bind) {        
     $filter ="(sAMAccountName=Revan Orion)";
+    echo $filter;
     $result=ldap_search($ldap_con,"DC=TylerMoak,DC=com",$filter) or exit("unable to search");
-    $entries = ldap_get_entries($ldap_con,$result);   
+    echo $result;
+    //$entries = ldap_get_entries($ldap_con,$result);   
     
-    $count = countValues($entries[0]["memberof"], "Users");
-    echo $count;
+    //$count = countValues($entries[0]["memberof"], "Users");
+    //echo $count;
     
     echo "<pre>";
-    print_r ($entries[0]["memberof"]);
+    //print_r ($entries[0]["memberof"]);
     echo "</pre>";
-    echo decodeSID($entries[0]["objectsid"][0]);
+   // echo decodeSID($entries[0]["objectsid"][0]);
     
     
 }

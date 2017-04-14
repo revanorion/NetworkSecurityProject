@@ -10,8 +10,6 @@ abstract class UserRights
     const Delete = 3;
 }
 
-
-
 function is_ajax() {
   return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 }
@@ -35,6 +33,12 @@ if (is_ajax()) {
     }
     if(isset($_POST['likePost']) && (!empty($_POST['wallSEQ']))){
         echo likePost($_POST['wallSEQ']);
+    }
+    if(isset($_POST['trash-file-id'])){
+        echo deleteFile($_POST['trash-file-id']);
+    }
+    if(isset($_POST['trash-wall-id'])){
+        echo deleteWall($_POST['trash-wall-id']);
     }
 }
 
@@ -124,104 +128,115 @@ function loadPost($wallSEQ){
                             </p>
                         </form>
                     </div>
-                    <div class='col-md-2'>
-                        <form class='well'>
-                            <p> this is a reply</p>
-                            <button class='btn btn-default'><span class='glyphicon glyphicon-thumbs-up'></span> <span class='badge'>0</span></button>
-                        </form>
-                    </div>";
+                    ";
         }
         return $getResults;
     }
     return "Error getting post!";
 }
 
-
 function loadPosts(){
     require_once './php/db_connect.php';
-    //this grabs all posts for the when the page loadds
-    $selectStmt = "SELECT W.WALL_SEQ, W.USER_SID, W.STATUS_TEXT, W.CREATED_ON FROM WALL W ORDER BY W.CREATED_ON DESC LIMIT 5 ";
-    $result = $db->query($selectStmt);
-    // output data of each row
-    $getResults="";
-    $userSEQ = $_SESSION['login_user_id'];
-    if (mysqli_num_rows($result) > 0) {
+    if (isset($_SESSION['login_user_rights'])&&$_SESSION['login_user_rights']>UserRights::None){
+        //this grabs all posts for the when the page loadds
+        $selectStmt = "SELECT W.WALL_SEQ, W.USER_SID, W.STATUS_TEXT, W.CREATED_ON FROM WALL W ORDER BY W.CREATED_ON DESC LIMIT 5 ";
+        $result = $db->query($selectStmt);
         // output data of each row
-        while($row = mysqli_fetch_assoc($result)) {
-            $imageHTML="";
-            $wallSEQ=$row["WALL_SEQ"];
-            $likeCount ="0";
-            $likeHTMl="";
-            $username="";
-            $ldap_con = connectLDAP();
-            if ($ldap_con!=0){
-                $sid = $row["USER_SID"];
-                $username = getAccountName($ldap_con, $sid);
-                @ldap_close(ldap_con);
-            }
-            //this selects all images for each wall post
-            $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
-            $ImageResult = $db->query($selectImageStmt);
-
-            if (mysqli_num_rows($ImageResult) > 0) {
-                while($rowImg = mysqli_fetch_assoc($ImageResult)) {
-                    //this will add construct the html elements for each image
-                        $imageHTML.="<p><a class='fileThumb' href='".$rowImg["FILE_NAME"]."' target='_blank'><image class='image-post' src='".$rowImg["FILE_NAME"]."'></image></a></p>";
+        $getResults="";
+        $userSEQ = $_SESSION['login_user_id'];
+        if (mysqli_num_rows($result) > 0) {
+            // output data of each row
+            while($row = mysqli_fetch_assoc($result)) {
+                $imageHTML="";
+                $wallSEQ=$row["WALL_SEQ"];
+                $likeCount ="0";
+                $likeHTMl="";
+                $username="";
+                $ldap_con = connectLDAP();
+                if ($ldap_con!=0){
+                    $sid = $row["USER_SID"];
+                    $username = getAccountName($ldap_con, $sid);
+                    @ldap_close(ldap_con);
                 }
-            }			
-            //this will select the likes of each wall post.
-            $selectCountLikes = "SELECT COUNT(WALL_SEQ) AS LIKES FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ;
-            $resultCountLikes = $db->query($selectCountLikes);
-            //this will check to see if the current user has liked the post. this will determine the checked status of the like button
-            $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SID = '".$userSEQ."'";
-            $resultLike = $db->query($selectLike);
-            if (mysqli_num_rows($resultLike) > 0) {
-                $likeHTML = "<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' checked=true />";
-            } else{
-                $likeHTML ="<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' />";
-            }
-            if (mysqli_num_rows($resultCountLikes) > 0) {
-                while($rowLikes = mysqli_fetch_assoc($resultCountLikes)) {
+                //this selects all images for each wall post
+                $selectImageStmt = "SELECT I.FILE_SEQ, I.FILE_NAME FROM WALL_FILE WI JOIN FILE I ON WI.FILE_SEQ = I.FILE_SEQ WHERE WI.WALL_SEQ =".$wallSEQ;
+                $ImageResult = $db->query($selectImageStmt);
+                if (mysqli_num_rows($ImageResult) > 0) {
+                    while($rowImg = mysqli_fetch_assoc($ImageResult)) {
+                        //this will add construct the html elements for each image
+                        $imageHTML.="
+                        <div class='row'>
+                            <div class='col-md-10 text-center'>
+                                <a class='fileThumb' href='".$rowImg["FILE_NAME"]."' target='_blank' download>
+                                    <image class='image-post' src='".$rowImg["FILE_NAME"]."'>
+                                    </image>
+                                </a>
+                            </div>";
+                        if ($_SESSION['login_user_rights']==UserRights::Delete)
+                            $imageHTML.="<div data-id=".$rowImg['FILE_SEQ']." class='col-md-1 col-md-offset-1 alert alert-danger text-center trashFile'><i class='fa fa-trash-o fa-lg' aria-hidden='true'></i></div>";
+                        $imageHTML.="</div>";
+                    }
+                }			
+                //this will select the likes of each wall post.
+                $selectCountLikes = "SELECT COUNT(WALL_SEQ) AS LIKES FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ;
+                $resultCountLikes = $db->query($selectCountLikes);
+                //this will check to see if the current user has liked the post. this will determine the checked status of the like button
+                $selectLike = "SELECT WALL_SEQ FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SID = '".$userSEQ."'";
+                $resultLike = $db->query($selectLike);
+                if (mysqli_num_rows($resultLike) > 0) {
+                    $likeHTML = "<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' checked=true />";
+                } else{
+                    $likeHTML ="<input data-id=".$wallSEQ." id='like-".$wallSEQ."' class='like' type='checkbox' />";
+                }
+                if (mysqli_num_rows($resultCountLikes) > 0) {
+                    while($rowLikes = mysqli_fetch_assoc($resultCountLikes)) {
                         $likeCount=$rowLikes["LIKES"];
+                    }
                 }
-            }
-            //this builds the post
-            $getResults.= "<div class='row'>
-                    <div class='col-md-offset-3 col-md-5'>
-                        <hr/> </div>
+                //this builds the post
+                $getResults.= "<div class='row'>
+                <div class='col-md-offset-3 col-md-5'>
+                <hr/> </div>
                 </div>
                 <div id='WALL-SEQ-".$row["WALL_SEQ"]."' class='row'>
                     <div class='col-md-offset-3 col-md-3'>
                         <form class='well'>
-                            <p>".$username." ".$row["CREATED_ON"]."</p>
-                            <p>".$row["STATUS_TEXT"]."</p>
-                            ".$imageHTML."
-                            <p>
-                                <div class='well'>
-                                ".$likeHTML."
-                                <label for='like-".$wallSEQ."' class='like-label glyphicon glyphicon-thumbs-up'></label>
-                                <span class='badge'>".$likeCount."</span>
+                            <div class='row'>
+                                <div class='col-md-10'>
+                                    ".$username." ".$row["CREATED_ON"]."
+                                </div>";
+                if ($_SESSION['login_user_rights']==UserRights::Delete)
+                    $getResults.="<div data-id=".$row["WALL_SEQ"]." class='col-md-1 col-md-offset-1 alert alert-danger text-center trashWall'><i class='fa fa-trash-o fa-lg' aria-hidden='true'></i></div>";
+                $getResults.= "</div>
+                            <div class='row'>
+                                <div class='col-md-12'>
+                                    ".$row["STATUS_TEXT"]."
                                 </div>
-                            </p>
+                            </div>                         
+                            ".$imageHTML."                                
+                            <div class='row'>
+                                <div class='col-md-12'>
+                                    <div class='well'>
+                                        ".$likeHTML."
+                                        <label for='like-".$wallSEQ."' class='like-label glyphicon glyphicon-thumbs-up'></label>
+                                        <span class='badge'>".$likeCount."</span>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
-                    </div>
-                    <div class='col-md-2'>
-                        <form class='well'>
-                            <p> this is a reply</p>
-                            <button class='btn btn-default'><span class='glyphicon glyphicon-thumbs-up'></span> <span class='badge'>4</span></button>
-                        </form>
-                    </div>
+                    </div>                    
                 </div>";
         }
         return $getResults;
     }
     return "Error getting posts!";
 }
-
+}
 
 function postVoice($textValue, $pictureUrl){
     
     require_once './php/db_connect.php';
+    if (isset($_SESSION['login_user_rights'])&&$_SESSION['login_user_rights']>1){
     $userid= $_SESSION['login_user_id'];
     $insertStmt = "INSERT INTO WALL (STATUS_TEXT, USER_SID, CREATED_BY, CREATED_ON) VALUES('".$textValue."', '".$userid."', '".$userid."', '".date("Y-m-d H:i:s")."')";
     $result = $db->query($insertStmt);
@@ -261,6 +276,8 @@ function postVoice($textValue, $pictureUrl){
                             $imgSeq=mysqli_fetch_assoc($selectImgresult)["FILE_SEQ"];
                             $insertWallImageStmt = "INSERT INTO WALL_FILE (FILE_SEQ, WALL_SEQ) VALUES (".$imgSeq.", ".$wallSeq.")";
                             $db->query($insertWallImageStmt);
+                            $insertHistStmt ="INSERT INTO FILE_HISTORY (FILE_SEQ, ACTION, USER_SID, CREATED_ON) VALUES (".$imgSeq.",'Upload','".$userid."','".date("Y-m-d H:i:s")."')";
+                            $db->query($insertHistStmt);
                             $imageHtml.="<p><a class='fileThumb' href='".$target_file."' target='_blank'><image class='image-post' src='".$target_file."'></image></a></p>";
                             unlink($file['target_file']);
                         }
@@ -294,7 +311,7 @@ function postVoice($textValue, $pictureUrl){
     }
     return 0;
 }
-
+}
 
 function registerUser($username, $password){
     require_once './php/db_connect.php';
@@ -313,7 +330,6 @@ function registerUser($username, $password){
         return 0;
     }
 }
-
 
 function loginUser($username, $password){   
     try{
@@ -348,8 +364,6 @@ function loginUser($username, $password){
    
 }
 
-
-
 function decodeSID($value)
 {
     # revision - 8bit unsigned int (C1)
@@ -380,14 +394,13 @@ function decodeSID($value)
     );
 }
 
-
-
 function connectLDAP(){
     $ldap_dn="CN=Administrator,CN=Users,DC=TylerMoak,DC=com";
     $password="51bd-baf";
     $adServer = "ldap://WIN-DR1PJ43FVJ3.TylerMoak.com";
     $ldap_con = ldap_connect($adServer);
     ldap_set_option($ldap_con, LDAP_OPT_PROTOCOL_VERSION, 3);
+    ldap_set_option($ldap_con, LDAP_OPT_REFERRALS, 0);
     $bind = ldap_bind($ldap_con, $ldap_dn, $password);
     if ($bind) {
         return $ldap_con;
@@ -431,6 +444,77 @@ function doesExist($arr, $search)
     return 0;
 }
 
-
-
+function deleteFile($fileSEQ){
+    require './php/db_connect.php';
+    $userSEQ = $_SESSION['login_user_id'];
+    $selectStmt = "SELECT F.FILE_SEQ, F.FILE_NAME FROM FILE F WHERE F.FILE_SEQ =".$fileSEQ;
+    $result = $db->query($selectStmt);
+    //
+    // output data of each row
+    
+    if (mysqli_num_rows($result) > 0) {
+        // output data of each row
+        while($row = mysqli_fetch_assoc($result)) {
+            $deleteStmt = "DELETE FROM WALL_FILE WHERE FILE_SEQ = ".$fileSEQ;
+            $dresult = $db->query($deleteStmt);
+            if ($dresult){
+                $deleteStmt = "DELETE FROM FILE WHERE FILE_SEQ = ".$fileSEQ;
+                $dresult = $db->query($deleteStmt);
+                if ($dresult){
+                    $insertStmt ="INSERT INTO FILE_HISTORY (FILE_SEQ, ACTION, USER_SID, CREATED_ON) VALUES (".$fileSEQ.",'Delete','".$userSEQ."','".date("Y-m-d H:i:s")."')";
+                    $iresult = $db->query($insertStmt);
+                    if($iresult)
+                        unlink($row['FILE_NAME']);
+                    else 
+                        return 0;
+                    return 1;
+                }
+                else
+                    return 0;                
+            } 
+            else
+                return 0;           
+        }
+    }
+    
+}
+function deleteWall($wallSEQ){
+     require './php/db_connect.php';
+    $userSEQ = $_SESSION['login_user_id'];
+    $selectStmt = "SELECT W.WALL_SEQ FROM WALL W WHERE W.WALL_SEQ =".$wallSEQ;
+    $result = $db->query($selectStmt);
+    //
+    // output data of each row
+    
+    if (mysqli_num_rows($result) > 0) {
+        // output data of each row
+        $selectStmt = "SELECT W.FILE_SEQ FROM WALL_FILE W WHERE W.WALL_SEQ =".$wallSEQ;
+        $result = $db->query($selectStmt);
+        
+        if (mysqli_num_rows($result) > 0) {
+            while($row = mysqli_fetch_assoc($result)) {
+                $passed = deleteFile($row['FILE_SEQ']);               
+                if (!$passed)
+                    return 0;                
+            }
+        }
+        
+        $selectStmt = "SELECT L.USER_SID FROM WALL_LIKE L WHERE L.WALL_SEQ =".$wallSEQ;
+        $result = $db->query($selectStmt);
+        if (mysqli_num_rows($result) > 0) {
+            while($row = mysqli_fetch_assoc($result)) {
+                $deleteStmt = "DELETE FROM WALL_LIKE WHERE WALL_SEQ = ".$wallSEQ." AND USER_SID='".$userSEQ."'";
+                $dresult = $db->query($deleteStmt);
+                if (!$dresult)
+                    return 0;
+            }
+        }
+        
+        $deleteStmt = "DELETE FROM WALL WHERE WALL_SEQ = ".$wallSEQ;
+        $dresult = $db->query($deleteStmt);
+        if (!$dresult)
+            return 0;
+        return 1;
+    }
+}
 ?>

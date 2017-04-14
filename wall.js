@@ -116,5 +116,30 @@ $(document).ready(function () {
         }
     });
 
+    $(document).on('click', '.trashFile', function () {
+        var imgDiv = $(this);
+        var data = {
+            'trash-file-id': $(this).data('id')
+        };
+        var url = 'main.php';
+        $.post(url, data).then(function (data) {
+            imgDiv.parent().html('');
+        }, function (err) {
+            alert('Fail');
+        });
+    });
+    $(document).on('click', '.trashWall', function () {
+        var wallDiv = $(this);
+        var data = {
+            'trash-wall-id': wallDiv.data('id')
+        };
+        var url = 'main.php';
+        $.post(url, data).then(function (data) {
+            wallDiv.parent().parent().parent().parent().html('');
+        }, function (err) {
+            alert('Fail');
+        });
+    });
+
 
 });

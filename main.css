@@ -1,32 +1,33 @@
-
-
 html {
-/*    background-image:url(images/Dark-Brushed-Metal-metal-texture2_th_thumb1.jpg);*/
-    background-repeat:repeat
-    background-attachment: fixed;
-    background-size:100% 100%;
+    /*    background-image:url(images/Dark-Brushed-Metal-metal-texture2_th_thumb1.jpg);*/
+    background-repeat: repeat background-attachment: fixed;
+    background-size: 100% 100%;
     -webkit-font-smoothing: antialiased;
-
 }
-body{
+body {
     background-color: lightblue !important;
-    color:black;
+    color: black;
 }
-.content{
+.content {
     background-color: white;
-    color:black;
+    color: black;
 }
+
 /*
 input, select{
     background-color: darkgray;
 }
 */
+
+.trashFile,
+.trashWall {
+    padding: 0px;
+}
 input[type="text"]:disabled {
     background: gray;
     width: 100%;
 }
-input[type="radio"] {
-}
+input[type="radio"] {}
 #results {
     background-color: lightgray !important;
     margin-left: 5px;
@@ -35,58 +36,53 @@ input[type="radio"] {
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
     border-top-right-radius: 5px;
-
-
 }
-.image-post{
+.image-post {
     width: auto;
     height: auto;
     max-width: 300px;
     max-height: 400px;
 }
-#results li{
+#results li {
     padding: 5px;
     padding-left: 10px;
     list-style: none;
     display: block;
 }
-#results li:hover{
+#results li:hover {
     background-color: darkgray;
-    cursor:pointer;
+    cursor: pointer;
 }
 span.glyphicon-user {
     font-size: 2.2em;
     padding-top: 2px;
     background-color: black;
 }
-.dropdown-menu a{
+.dropdown-menu a {
     color: black;
 }
-
-
-
-.glyphicon-thumbs-up [value=true]{
+.glyphicon-thumbs-up [value=true] {
     color: dodgerblue;
 }
-.glyphicon-thumbs-up:hover{
+.glyphicon-thumbs-up:hover {
     color: rgba(0, 82, 134, 0.4);
 }
-.like{
+.like {
     display: none !important;
 }
 .like:checked + label {
     color: dodgerblue;
 }
-.like-label + label{
+.like-label + label {
     display: none;
 }
-.like-label:hover + label{
+.like-label:hover + label {
     display: inline-block;
 }
 #ihover {
-	position: fixed;
-	max-height: 97%;
-	max-width: 75%;
-	padding-bottom: 18px;
-    z-index:2000;
+    position: fixed;
+    max-height: 97%;
+    max-width: 75%;
+    padding-bottom: 18px;
+    z-index: 2000;
 }
